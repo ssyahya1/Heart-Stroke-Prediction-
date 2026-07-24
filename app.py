@@ -1,0 +1,201 @@
+'''
+import pandas as pd
+import streamlit as st
+import joblib
+model = joblib.load("L.Regression_heart.pkl")
+scaler = joblib.load("scaler.pkl")
+expected_columns = joblib.load("columns.pkl")
+
+st.title("Heart Stroke Prediction❤️")
+st.markdown("Provide the following details")
+age = st.slider("Age",18,100,40)
+sex = st.selectbox("Sex",["M","F"])
+chest_pain = st.selectbox("Chest Pain Type",['ATA','NAP','TA','ASY'])
+resting_BP = st.number_input("Resting Blood Pressure (mm Hg)",80,200,120)
+cholesterol = st.number_input("Cholesterol (mg\dL)", 100,600,200)
+fasting_bs = st.selectbox("Fasting Blood Sugar > 120 mg\dL",[0 , 1])
+resting_ECG = st.selectbox("Resting ECG",["Normal" ,"ST","LVH"])
+max_hr = st.slider("Max Heart Rate",60,220,150)
+exercise_angina = st.selectbox("Exercise Induced Angina",['Y','N'])
+oldpeak = st.slider("Oldpeak  (ST Depression)",0.0,6.0,1.0)
+st_slope = st.selectbox("ST Slope",['UP','Flat','Down'])
+
+
+if st.button("Predict"):
+    raw_input = {
+        'Age': age,
+        'RestingBP': resting_BP,
+        'Cholesterol': cholesterol,
+        'FastingBS': fasting_bs,
+        'MaxHR': max_hr,
+        'Oldpeak': oldpeak,
+        'Sex_' + sex: 1,
+        'ChestPainType_' + chest_pain: 1,
+        'RestingECG_' + resting_ECG: 1,
+        'ExerciseAngina_' + exercise_angina: 1,
+        'ST_Slope_' + st_slope: 1
+    
+    }
+
+    input_df = pd.DataFrame([raw_input])
+    for col in expected_columns:
+     if col not in input_df.columns:
+        input_df[col] = 0 
+    input_df = input_df[expected_columns]
+
+    scaled_input = scaler.transform(input_df)
+    
+   # prediction = model.predict(scaled_input)[0]
+    prediction = model.predict(scaled_input)[0]
+    probability = model.predict_proba(scaled_input)[0][1]
+
+    st.write("Prediction:", prediction)
+    st.write(f"Risk Probability: {probability:.2%}")
+
+    if prediction == 1 :
+       st.error("⚠️ High Risk Of Heart Disease")
+    else:
+       st.success("✅ Low Risk Of Heart Disease")
+       '''
+import pandas as pd
+import streamlit as st
+import joblib
+
+# ===============================
+# Load Model, Scaler & Columns
+# ===============================
+model = joblib.load("L.Regression_heart.pkl")
+scaler = joblib.load("scaler.pkl")
+expected_columns = joblib.load("columns.pkl")
+
+# ===============================
+# Page Configuration
+# ===============================
+st.set_page_config(
+    page_title="Heart Disease Prediction",
+    page_icon="❤️",
+    layout="centered"
+)
+
+st.title("❤️ Heart Stroke Prediction")
+st.markdown("Enter the patient's details below and click **Predict**.")
+
+# ===============================
+# Input Section
+# ===============================
+col1, col2 = st.columns(2)
+
+with col1:
+    age = st.slider("Age", 18, 100, 40)
+    sex = st.selectbox("Sex", ["M", "F"])
+    chest_pain = st.selectbox(
+        "Chest Pain Type",
+        ["ATA", "NAP", "TA", "ASY"]
+    )
+    resting_BP = st.number_input(
+        "Resting Blood Pressure (mm Hg)",
+        min_value=80,
+        max_value=200,
+        value=120
+    )
+    cholesterol = st.number_input(
+        "Cholesterol (mg/dL)",
+        min_value=100,
+        max_value=600,
+        value=200
+    )
+
+with col2:
+    fasting_bs = st.selectbox(
+        "Fasting Blood Sugar >120 mg/dL",
+        [0, 1]
+    )
+    resting_ECG = st.selectbox(
+        "Resting ECG",
+        ["Normal", "ST", "LVH"]
+    )
+    max_hr = st.slider(
+        "Maximum Heart Rate",
+        60,
+        220,
+        150
+    )
+    exercise_angina = st.selectbox(
+        "Exercise Induced Angina",
+        ["Y", "N"]
+    )
+    oldpeak = st.slider(
+        "Oldpeak (ST Depression)",
+        0.0,
+        6.0,
+        1.0
+    )
+
+st_slope = st.selectbox(
+    "ST Slope",
+    ["UP", "Flat", "Down"]
+)
+
+# ===============================
+# Prediction
+# ===============================
+if st.button("🔍 Predict", use_container_width=True):
+
+    raw_input = {
+        "Age": age,
+        "RestingBP": resting_BP,
+        "Cholesterol": cholesterol,
+        "FastingBS": fasting_bs,
+        "MaxHR": max_hr,
+        "Oldpeak": oldpeak,
+
+        "Sex_" + sex: 1,
+        "ChestPainType_" + chest_pain: 1,
+        "RestingECG_" + resting_ECG: 1,
+        "ExerciseAngina_" + exercise_angina: 1,
+        "ST_Slope_" + st_slope: 1
+    }
+
+    input_df = pd.DataFrame([raw_input])
+
+    # Add missing columns
+    for col in expected_columns:
+        if col not in input_df.columns:
+            input_df[col] = 0
+
+    input_df = input_df[expected_columns]
+
+    # Scale input
+    scaled_input = scaler.transform(input_df)
+
+    # Prediction
+    prediction = model.predict(scaled_input)[0]
+
+    # Probability (if supported)
+    probability = None
+    if hasattr(model, "predict_proba"):
+        probability = model.predict_proba(scaled_input)[0][1]
+
+    # ===============================
+    # Results
+    # ===============================
+    st.subheader("Prediction Result")
+
+    if prediction == 1:
+        st.error("⚠️ High Risk of Heart Disease")
+    else:
+        st.success("✅ Low Risk of Heart Disease")
+
+    if probability is not None:
+        st.write(f"**Probability of Heart Disease:** {probability:.2%}")
+
+    # Show entered data
+    st.subheader("Entered Information")
+    st.dataframe(input_df)
+
+    # Disclaimer
+    st.info(
+        "This prediction is generated by a machine learning model "
+        "and should not be considered a medical diagnosis. "
+        "Please consult a healthcare professional for medical advice."
+    )
